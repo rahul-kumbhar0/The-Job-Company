@@ -30,3 +30,4 @@ router.post('/change-status', protectCompany, ChangeJobApplicationsStatus)
 router.post('/change-visiblity', protectCompany, changeVisiblity)
 
 export default router
+
