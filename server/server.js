@@ -13,46 +13,54 @@ import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
-// CORS configuration
+// CORS configuration with specific origins
 app.use(cors({
-    origin: ['https://the-job-company.vercel.app', 'http://localhost:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+    origin: [
+        'https://the-job-company.vercel.app',
+        'https://the-job-company-client.vercel.app',
+        'http://localhost:5173'
+    ],
     credentials: true
 }));
 
 app.use(express.json())
 app.use(clerkMiddleware())
 
+// Health check route
+app.get('/', (req, res) => {
+    res.json({ status: 'API is running' })
+})
+
+// Routes
+app.post('/webhooks', clerkWebhooks)
+app.use('/api/company', companyRoutes)
+app.use('/api/jobs', jobRoutes)
+app.use('/api/users', userRoutes)
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'production' ? null : err.message
+    });
+});
+
+const PORT = process.env.PORT || 5000;
+
 const startServer = async () => {
     try {
-        await connectDB()
-        await connectCloudinary()
-
-        // Routes
-        app.get('/', (req, res) => res.json({ message: "API Working" }))
-        app.post('/webhooks', clerkWebhooks)
-        app.use('/api/company', companyRoutes)
-        app.use('/api/jobs', jobRoutes)
-        app.use('/api/users', userRoutes)
-
-        app.use((err, req, res, next) => {
-            console.error(err.stack);
-            res.status(500).json({ 
-                success: false, 
-                message: 'Internal Server Error',
-                error: process.env.NODE_ENV === 'production' ? {} : err.message
-            });
-        });
-
-        const PORT = process.env.PORT || 5000
+        await connectDB();
+        await connectCloudinary();
+        
         app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        })
+            console.log(`Server running on port ${PORT}`);
+        });
     } catch (error) {
-        console.error('Server startup error:', error);
+        console.error('Failed to start server:', error);
         process.exit(1);
     }
-}
+};
 
 startServer();
