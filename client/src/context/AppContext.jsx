@@ -6,7 +6,10 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 // Create axios instance with default config
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
-    withCredentials: true
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
 
 export const AppContext = createContext()
@@ -26,34 +29,24 @@ export const AppContextProvider = (props) => {
 
     const fetchJobs = async () => {
         try {
-            // Add logging to debug
-            console.log('Fetching from:', import.meta.env.VITE_BACKEND_URL + '/api/jobs');
-            
-            const response = await axios.get(import.meta.env.VITE_BACKEND_URL + '/api/jobs', {
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Add any required headers
-                }
-            });
-            
-            console.log('Response:', response.data);
-            
-            if (response.data.success) {
+            const response = await api.get('/api/jobs');
+            if (response?.data?.success) {
                 setJobs(response.data.jobs);
-            } else {
-                toast.error('No jobs found');
             }
         } catch (error) {
-            console.error('Fetch error:', error.response || error);
+            console.error('Error fetching jobs:', error);
             toast.error('Failed to fetch jobs. Please try again later.');
         }
     };
+
     const fetchCompanyData = async () => {
+        if (!companyToken) return;
+        
         try {
             const response = await api.get('/api/company/company', {
                 headers: { token: companyToken }
             });
-            if (response.data.success) {
+            if (response?.data?.success) {
                 setCompanyData(response.data.company);
             }
         } catch (error) {
@@ -63,12 +56,16 @@ export const AppContextProvider = (props) => {
     };
 
     const fetchUserData = async () => {
+        if (!isSignedIn || !user) return;
+        
         try {
             const token = await getToken();
+            if (!token) return;
+
             const response = await api.get('/api/users/user', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (response.data.success) {
+            if (response?.data?.success) {
                 setUserData(response.data.user);
             }
         } catch (error) {
@@ -78,12 +75,16 @@ export const AppContextProvider = (props) => {
     };
 
     const fetchUserApplications = async () => {
+        if (!isSignedIn || !user) return;
+        
         try {
             const token = await getToken();
+            if (!token) return;
+
             const response = await api.get('/api/users/applications', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (response.data.success) {
+            if (response?.data?.success) {
                 setUserApplications(response.data.applications);
             }
         } catch (error) {
@@ -99,25 +100,35 @@ export const AppContextProvider = (props) => {
     }, []);
 
     useEffect(() => {
-        if (companyToken) fetchCompanyData();
+        if (companyToken) {
+            fetchCompanyData();
+        }
     }, [companyToken]);
 
     useEffect(() => {
-        if (user) {
+        if (isSignedIn && user) {
             fetchUserData();
             fetchUserApplications();
         }
-    }, [user]);
+    }, [isSignedIn, user]);
 
     const value = {
-        searchFilter, setSearchFilter,
-        isSearched, setIsSearched,
-        jobs, setJobs,
-        showRecruiterLogin, setShowRecruiterLogin,
-        companyToken, setCompanyToken,
-        companyData, setCompanyData,
-        userData, setUserData,
-        userApplications, setUserApplications,
+        searchFilter, 
+        setSearchFilter,
+        isSearched, 
+        setIsSearched,
+        jobs, 
+        setJobs,
+        showRecruiterLogin, 
+        setShowRecruiterLogin,
+        companyToken, 
+        setCompanyToken,
+        companyData, 
+        setCompanyData,
+        userData, 
+        setUserData,
+        userApplications, 
+        setUserApplications,
         fetchUserData,
         fetchUserApplications,
         isSignedIn,
