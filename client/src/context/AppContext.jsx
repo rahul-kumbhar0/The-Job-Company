@@ -29,12 +29,18 @@ export const AppContextProvider = (props) => {
 
     const fetchJobs = async () => {
         try {
+            console.log('Fetching jobs...');
             const response = await api.get('/api/jobs');
+            console.log('Jobs response:', response.data);
+            
             if (response?.data?.success) {
-                setJobs(response.data.jobs);
+                setJobs(response.data.jobs || []);
+            } else {
+                console.error('Jobs fetch failed:', response.data);
+                toast.error('No jobs found');
             }
         } catch (error) {
-            console.error('Error fetching jobs:', error);
+            console.error('Jobs fetch error:', error.response || error);
             toast.error('Failed to fetch jobs. Please try again later.');
         }
     };

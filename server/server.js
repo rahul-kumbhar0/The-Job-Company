@@ -13,33 +13,35 @@ import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
-// CORS configuration with specific origins
+// Updated CORS configuration
 app.use(cors({
-    origin: [
-        'https://the-job-company.vercel.app',
-        'https://the-job-company-client.vercel.app',
-        'http://localhost:5173'
-    ],
+    origin: ['https://the-job-company.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
     credentials: true
 }));
 
 app.use(express.json())
 app.use(clerkMiddleware())
 
-// Health check route
+// Test route
 app.get('/', (req, res) => {
     res.json({ status: 'API is running' })
 })
 
-// Routes
-app.post('/webhooks', clerkWebhooks)
+// Routes with error handling
+app.use('/api/jobs', (req, res, next) => {
+    console.log('Jobs route accessed');
+    next();
+}, jobRoutes);
+
 app.use('/api/company', companyRoutes)
-app.use('/api/jobs', jobRoutes)
 app.use('/api/users', userRoutes)
+app.post('/webhooks', clerkWebhooks)
 
 // Global error handler
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error('Global error:', err);
     res.status(500).json({
         success: false,
         message: 'Internal Server Error',
@@ -58,7 +60,7 @@ const startServer = async () => {
             console.log(`Server running on port ${PORT}`);
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        console.error('Server startup error:', error);
         process.exit(1);
     }
 };

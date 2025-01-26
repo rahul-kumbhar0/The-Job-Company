@@ -3,11 +3,33 @@ import { getJobById, getJobs } from '../controllers/jobController.js';
 
 const router = express.Router()
 
-// Route to get all jobs data
-router.get('/', getJobs)
+// Add error handling middleware
+router.get('/', async (req, res) => {
+    try {
+        const jobs = await getJobs();
+        res.json({ success: true, jobs });
+    } catch (error) {
+        console.error('Jobs route error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch jobs',
+            error: error.message 
+        });
+    }
+});
 
-// Route to get a single job by ID
-router.get('/:id', getJobById)
-
+router.get('/:id', async (req, res) => {
+    try {
+        const job = await getJobById(req.params.id);
+        res.json({ success: true, job });
+    } catch (error) {
+        console.error('Job by ID route error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch job',
+            error: error.message 
+        });
+    }
+});
 
 export default router;
