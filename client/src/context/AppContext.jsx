@@ -23,22 +23,29 @@ export const AppContextProvider = (props) => {
     const [userData, setUserData] = useState(null)
     const [userApplications, setUserApplications] = useState([])
 
-    const fetchJobs = async () => {
+    const fetchJobs = async (retryCount = 0) => {
         try {
+            console.log('Fetching jobs from:', backendUrl + '/api/jobs');
             const { data } = await axios.get(backendUrl + '/api/jobs')
+
             if (data.success) {
                 setJobs(data.jobs)
             } else {
+                console.error('Error fetching jobs:', data.message);
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
+            console.error('Error fetching jobs:', error);
+            if (retryCount < 3) {
+                setTimeout(() => fetchJobs(retryCount + 1), 1000);
+            } else {
+                toast.error('Error connecting to server. Please try again later.')
+            }
         }
     }
-
     const fetchCompanyData = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/company/company', 
+            const { data } = await axios.get(backendUrl + '/api/company/company',
                 { headers: { token: companyToken } }
             )
             if (data.success) {

@@ -13,25 +13,29 @@ import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
-// Middlewares
-app.use(cors())
+// CORS configuration
+app.use(cors({
+    origin: ['https://the-job-company.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+    credentials: true
+}));
+
 app.use(express.json())
 app.use(clerkMiddleware())
 
-// Connect to services
 const startServer = async () => {
     try {
         await connectDB()
         await connectCloudinary()
 
         // Routes
-        app.get('/', (req, res) => res.send("API Working"))
+        app.get('/', (req, res) => res.json({ message: "API Working" }))
         app.post('/webhooks', clerkWebhooks)
         app.use('/api/company', companyRoutes)
         app.use('/api/jobs', jobRoutes)
         app.use('/api/users', userRoutes)
 
-        // Error handling middleware
         app.use((err, req, res, next) => {
             console.error(err.stack);
             res.status(500).json({ 
