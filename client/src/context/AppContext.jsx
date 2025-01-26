@@ -26,18 +26,28 @@ export const AppContextProvider = (props) => {
 
     const fetchJobs = async () => {
         try {
-            const response = await api.get('/api/jobs');
+            // Add logging to debug
+            console.log('Fetching from:', import.meta.env.VITE_BACKEND_URL + '/api/jobs');
+            
+            const response = await axios.get(import.meta.env.VITE_BACKEND_URL + '/api/jobs', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add any required headers
+                }
+            });
+            
+            console.log('Response:', response.data);
+            
             if (response.data.success) {
                 setJobs(response.data.jobs);
             } else {
-                toast.error(response.data.message);
+                toast.error('No jobs found');
             }
         } catch (error) {
-            console.error('Error fetching jobs:', error);
+            console.error('Fetch error:', error.response || error);
             toast.error('Failed to fetch jobs. Please try again later.');
         }
     };
-
     const fetchCompanyData = async () => {
         try {
             const response = await api.get('/api/company/company', {
