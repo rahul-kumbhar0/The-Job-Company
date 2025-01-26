@@ -3,7 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 
-// Create axios instance with default config
+export const AppContext = createContext();
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true,
@@ -12,42 +13,33 @@ const api = axios.create({
     }
 });
 
-export const AppContext = createContext()
-
-export const AppContextProvider = (props) => {
-    const { user, isSignedIn } = useUser()
-    const { getToken } = useAuth()
+export function AppContextProvider({ children }) {
+    const { user, isSignedIn } = useUser();
+    const { getToken } = useAuth();
     
-    const [searchFilter, setSearchFilter] = useState({ title: '', location: '' })
-    const [isSearched, setIsSearched] = useState(false)
-    const [jobs, setJobs] = useState([])
-    const [showRecruiterLogin, setShowRecruiterLogin] = useState(false)
-    const [companyToken, setCompanyToken] = useState(null)
-    const [companyData, setCompanyData] = useState(null)
-    const [userData, setUserData] = useState(null)
-    const [userApplications, setUserApplications] = useState([])
+    const [searchFilter, setSearchFilter] = useState({ title: '', location: '' });
+    const [isSearched, setIsSearched] = useState(false);
+    const [jobs, setJobs] = useState([]);
+    const [showRecruiterLogin, setShowRecruiterLogin] = useState(false);
+    const [companyToken, setCompanyToken] = useState(null);
+    const [companyData, setCompanyData] = useState(null);
+    const [userData, setUserData] = useState(null);
+    const [userApplications, setUserApplications] = useState([]);
 
     const fetchJobs = async () => {
         try {
-            console.log('Fetching jobs...');
             const response = await api.get('/api/jobs');
-            console.log('Jobs response:', response.data);
-            
             if (response?.data?.success) {
-                setJobs(response.data.jobs || []);
-            } else {
-                console.error('Jobs fetch failed:', response.data);
-                toast.error('No jobs found');
+                setJobs(response.data.jobs);
             }
         } catch (error) {
-            console.error('Jobs fetch error:', error.response || error);
+            console.error('Error fetching jobs:', error);
             toast.error('Failed to fetch jobs. Please try again later.');
         }
     };
 
     const fetchCompanyData = async () => {
         if (!companyToken) return;
-        
         try {
             const response = await api.get('/api/company/company', {
                 headers: { token: companyToken }
@@ -63,11 +55,9 @@ export const AppContextProvider = (props) => {
 
     const fetchUserData = async () => {
         if (!isSignedIn || !user) return;
-        
         try {
             const token = await getToken();
             if (!token) return;
-
             const response = await api.get('/api/users/user', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -82,11 +72,9 @@ export const AppContextProvider = (props) => {
 
     const fetchUserApplications = async () => {
         if (!isSignedIn || !user) return;
-        
         try {
             const token = await getToken();
             if (!token) return;
-
             const response = await api.get('/api/users/applications', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -118,22 +106,22 @@ export const AppContextProvider = (props) => {
         }
     }, [isSignedIn, user]);
 
-    const value = {
-        searchFilter, 
+    const contextValue = {
+        searchFilter,
         setSearchFilter,
-        isSearched, 
+        isSearched,
         setIsSearched,
-        jobs, 
+        jobs,
         setJobs,
-        showRecruiterLogin, 
+        showRecruiterLogin,
         setShowRecruiterLogin,
-        companyToken, 
+        companyToken,
         setCompanyToken,
-        companyData, 
+        companyData,
         setCompanyData,
-        userData, 
+        userData,
         setUserData,
-        userApplications, 
+        userApplications,
         setUserApplications,
         fetchUserData,
         fetchUserApplications,
@@ -143,10 +131,10 @@ export const AppContextProvider = (props) => {
     };
 
     return (
-        <AppContext.Provider value={value}>
-            {props.children}
+        <AppContext.Provider value={contextValue}>
+            {children}
         </AppContext.Provider>
     );
-};
+}
 
 export default AppContext;

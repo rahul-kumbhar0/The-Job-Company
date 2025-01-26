@@ -13,35 +13,27 @@ import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
-// Updated CORS configuration
 app.use(cors({
     origin: ['https://the-job-company.vercel.app', 'http://localhost:5173'],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'token']
 }));
 
 app.use(express.json())
 app.use(clerkMiddleware())
 
-// Test route
 app.get('/', (req, res) => {
     res.json({ status: 'API is running' })
 })
 
-// Routes with error handling
-app.use('/api/jobs', (req, res, next) => {
-    console.log('Jobs route accessed');
-    next();
-}, jobRoutes);
-
+app.use('/api/jobs', jobRoutes);
 app.use('/api/company', companyRoutes)
 app.use('/api/users', userRoutes)
 app.post('/webhooks', clerkWebhooks)
 
-// Global error handler
 app.use((err, req, res, next) => {
-    console.error('Global error:', err);
+    console.error('Error:', err);
     res.status(500).json({
         success: false,
         message: 'Internal Server Error',
