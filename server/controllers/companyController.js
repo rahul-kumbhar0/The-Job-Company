@@ -6,37 +6,33 @@ import Job from "../models/Job.js";
 import JobApplication from "../models/JobApplication.js";
 
 // Register a new company
+// Example for registerCompany
 export const registerCompany = async (req, res) => {
-
-    const { name, email, password } = req.body
-
+    const { name, email, password } = req.body;
     const imageFile = req.file;
 
     if (!name || !email || !password || !imageFile) {
-        return res.json({ success: false, message: "Missing Details" })
+        return res.status(400).json({ success: false, message: "Missing Details" });
     }
 
     try {
-
-        const companyExists = await Company.findOne({ email })
-
+        const companyExists = await Company.findOne({ email });
         if (companyExists) {
-            return res.json({ success: false, message: 'Company already registered' })
+            return res.status(400).json({ success: false, message: 'Company already registered' });
         }
 
-        const salt = await bcrypt.genSalt(10)
-        const hashPassword = await bcrypt.hash(password, salt)
-
-        const imageUpload = await cloudinary.uploader.upload(imageFile.path)
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash(password, salt);
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path);
 
         const company = await Company.create({
             name,
             email,
             password: hashPassword,
             image: imageUpload.secure_url
-        })
+        });
 
-        res.json({
+        res.status(201).json({
             success: true,
             company: {
                 _id: company._id,
@@ -45,12 +41,12 @@ export const registerCompany = async (req, res) => {
                 image: company.image
             },
             token: generateToken(company._id)
-        })
+        });
 
     } catch (error) {
-        res.json({ success: false, message: error.message })
+        res.status(500).json({ success: false, message: error.message });
     }
-}
+};
 
 // Login Company
 export const loginCompany = async (req, res) => {

@@ -13,6 +13,7 @@ import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
+// CORS configuration
 app.use(cors({
     origin: ['https://the-job-company.vercel.app', 'http://localhost:5173'],
     credentials: true,
@@ -23,17 +24,30 @@ app.use(cors({
 app.use(express.json())
 app.use(clerkMiddleware())
 
+// Basic request logging
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+});
+
+// Health check route
 app.get('/', (req, res) => {
     res.json({ status: 'API is running' })
 })
 
-app.use('/api/jobs', jobRoutes);
+// Routes
+app.use('/api/jobs', (req, res, next) => {
+    console.log('Jobs route accessed');
+    next();
+}, jobRoutes);
+
 app.use('/api/company', companyRoutes)
 app.use('/api/users', userRoutes)
 app.post('/webhooks', clerkWebhooks)
 
+// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error('Server error:', err);
     res.status(500).json({
         success: false,
         message: 'Internal Server Error',
@@ -45,9 +59,15 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
     try {
+        // Connect to MongoDB
         await connectDB();
+        console.log('Database connected successfully');
+
+        // Connect to Cloudinary
         await connectCloudinary();
+        console.log('Cloudinary connected successfully');
         
+        // Start server
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
@@ -58,3 +78,5 @@ const startServer = async () => {
 };
 
 startServer();
+
+export default app;
